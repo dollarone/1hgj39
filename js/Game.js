@@ -61,7 +61,7 @@ PlatformerGame.Game.prototype = {
 
         this.music = this.game.add.audio('music');
         this.music.loop = true;
-//        this.music.play();
+        this.music.play();
 
         this.cursors = this.game.input.keyboard.createCursorKeys();
         
