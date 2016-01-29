@@ -15,8 +15,7 @@ PlatformerGame.Preload.prototype = {
     this.game.load.spritesheet('tiles', 'assets/images/bitslap-minild62.png', 16, 16);
     this.load.tilemap('level1', 'assets/tilemaps/level1.json', null, Phaser.Tilemap.TILED_JSON);
     this.game.load.image('sky', 'assets/images/sky_new.png');
-    this.game.load.image('star', 'assets/images/star.png');
-    this.game.load.spritesheet('dude', 'assets/images/dude.png', 32, 48);
+    this.game.load.image('sun', 'assets/images/sun.png');
 
     this.game.load.audio('music', 'assets/audio/music.ogg');
 

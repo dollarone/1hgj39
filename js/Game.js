@@ -8,36 +8,30 @@ PlatformerGame.Game.prototype = {
         this.sky1 = this.game.add.sprite(0, 0, 'sky');
         this.sky1.scale.setTo(10, 1.5);
 
+        this.sunSprite = this.game.add.sprite(700, 260, 'sun');
+        this.sunOffsetX = 300;
+
         this.map = this.game.add.tilemap('level1');
 
         this.map.addTilesetImage('bitslap-minild62', 'tiles');
 
-        //this.blockedLayer = this.map.createLayer('objectLayer');
         this.backgroundLayer = this.map.createLayer('backgroundLayer');
-
-        //this.blockedLayer = this.map.createLayer('objectLayer');
         this.blockedLayer = this.map.createLayer('blockedLayer');
-        //this.foregroundLayer = this.map.createLayer('foregroundLayer');
 
         this.map.setCollisionBetween(1, 10000, true, 'blockedLayer');
 
-        // make the world boundaries fit the ones in the tiled map
         this.blockedLayer.resizeWorld();
 
         var result = this.findObjectsByType('playerStart', this.map, 'objectLayer');
         this.player = this.game.add.sprite(result[0].x, result[0].y, 'tiles');
         this.player.frame = 1; 
 
-
         var result = this.findObjectsByType('teabag', this.map, 'objectLayer');
         this.teabag = this.game.add.sprite(result[0].x, result[0].y, 'tiles');
         this.teabag.frame = 31;
         this.game.physics.arcade.enable(this.teabag);
 
-        //  We need to enable physics on the player
-        this.game.physics.arcade.enable(this.player);
         this.teabag.body.gravity.y = 10;
-        //this.game.camera.setSize(this.game.world.width, this.game.world.height);
 
         var result = this.findObjectsByType('home', this.map, 'objectLayer');
         this.home = this.game.add.sprite(result[0].x, result[0].y, 'tiles');
@@ -46,7 +40,7 @@ PlatformerGame.Game.prototype = {
         this.home.anchor.setTo(0.5);
         
 
-        //  Player physics properties. Give the little guy a slight bounce.
+        this.game.physics.arcade.enable(this.player);
         this.player.body.bounce.y = 0;
         this.player.body.gravity.y = 400;
         this.player.anchor.setTo(0.5);
@@ -70,11 +64,12 @@ PlatformerGame.Game.prototype = {
         this.showDebug = false; 
         this.teaCollected = false;
         this.foregroundLayer = this.map.createLayer('foregroundLayer');
+
         this.sky = this.game.add.sprite(0, 0, 'sky');
         this.sky.scale.setTo(10, 1.5);
 
         this.sky.alpha = 0.1;
-        var tween = this.game.add.tween(this.sky).to({alpha: 0.9999}, 30000);    
+        var tween = this.game.add.tween(this.sky).to({alpha: 1}, 30000);    
         tween.start();
         this.tweenTint(this.sky, 0xfffff, 0x01000, 30000); // tween the tint of sprite from red to blue over 2 seconds (2000ms)
 
@@ -83,6 +78,9 @@ PlatformerGame.Game.prototype = {
         this.score = 0;
 
         var tween = this.game.add.tween(this.scoreText).to( { alpha: 0 }, 7000);
+        tween.start();
+
+        var tween = this.game.add.tween(this.sunSprite).to({y: 366}, 30000);    
         tween.start();
 
 
@@ -102,11 +100,12 @@ PlatformerGame.Game.prototype = {
 
     update: function() {
         this.timer++;
-        //  Collide the player and the stars with the platforms
+
+        //  Collide the player and the bag with the platforms
         this.game.physics.arcade.collide(this.player, this.blockedLayer);
         this.game.physics.arcade.collide(this.teabag, this.blockedLayer);
 
-        //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
+        //  Checks to see if the player overlaps with the bag, if he does call the collectTeabag function
         this.game.physics.arcade.overlap(this.player, this.teabag, this.collectTeabag, null, this);
         this.game.physics.arcade.overlap(this.player, this.home, this.wentHome, null, this);
 
@@ -147,35 +146,37 @@ PlatformerGame.Game.prototype = {
             this.death();
         }
 
+
+        if (this.player.x >= 400 && this.player.x < 2800 && this.player.body.velocity.x > 0) {
+            this.sunSprite.x = this.player.x + this.sunOffsetX;
+
+            if (this.timer % 2 == 0) {
+                this.sunOffsetX--;
+            }
+
+        }
+        else if (this.player.x >= 400 && this.player.x < 2800 && this.player.body.velocity.x < 0) {
+            this.sunSprite.x = this.player.x + this.sunOffsetX;
+            if (this.timer % 2 == 0) {
+                this.sunOffsetX++;
+            }
+
+        }
     },
 
     death: function() {
-        var result = this.findObjectsByType('playerStart', this.map, 'objectLayer');
-        this.player.x = result[0].x;
-        this.player.y = result[0].y;
-        this.player.frame = 1; 
-        if (this.teaCollected) {
-            
-            var result = this.findObjectsByType('teabag', this.map, 'objectLayer');
-            this.teabag = this.game.add.sprite(result[0].x, result[0].y, 'tiles');
-            this.teabag.frame = 31;
-            this.game.physics.arcade.enable(this.teabag);
-
-            //  We need to enable physics on the player
-            this.game.physics.arcade.enable(this.player);
-            this.teabag.body.gravity.y = 10;
-            this.teaCollected = false;
-        }
+        this.state.restart();
     },
 
     collectTeabag : function(player, tea) {
         tea.kill();
         this.teaCollected = true;
     },
+
     wentHome: function(player, tea) {
         
         if (this.teaCollected) {
-            this.scoreText.text = "You win! Yay";
+            this.scoreText.text = " You managed to find your way home! Good work!";
             this.scoreText.alpha = 1;
             this.game.paused = true;
 
@@ -195,17 +196,6 @@ PlatformerGame.Game.prototype = {
         });
         return result;
     },
-
-    createFromTiledObject: function(element, group) {
-        var sprite = group.create(element.x, element.y, 'objects');
-        sprite.frame = parseInt(element.properties.frame);
-
-        // copy all of the sprite's properties
-        Object.keys(element.properties).forEach(function(key) {
-            sprite[key] = element.properties[key];
-        });
-    },
-
 
     render: function() {
 
